@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tool-grounded-agent"
+version = "0.1.0"
+description = "A grounding harness for agentic drafting: tool-ledger provenance + a numguard grounding backstop, with blind spots shipped as executable known-gap tests."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Patrick Iben", email = "p.iben@saeny.net"}]
+keywords = ["llm", "agents", "tool-use", "guardrails", "grounding", "provenance", "evaluation", "clinical"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Intended Audience :: Science/Research",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/YOUR-GITHUB/tool-grounded-agent"
+
+[tool.setuptools]
+packages = ["toolagent"]

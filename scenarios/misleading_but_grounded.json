@@ -1,0 +1,67 @@
+{
+  "name": "Misleading-but-grounded (executable KNOWN-GAPS)",
+  "abs_tol": 0.05,
+  "rel_tol": 0.001,
+  "facts": [
+    {"name": "n_treated",  "value": 24, "unit": "participants"},
+    {"name": "n_any_ae",   "value": 19, "unit": "participants"},
+    {"name": "n_headache", "value": 6,  "unit": "participants"}
+  ],
+  "banned_phrases": ["well tolerated", "no safety concerns", "safe and effective"],
+  "required_names": ["n_treated"],
+  "candidates": [
+    {
+      "label": "spelled_out_number_and_paraphrased_claim",
+      "expected": "miss",
+      "note": "GAP: 'Nineteen' is not extracted as a number; 'encouraging tolerability profile' is not on the banned list. Both slip through.",
+      "template": "In the safety population (N={n_treated}), tolerability was assessed.",
+      "plan": {
+        "tool_calls": [{"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}}],
+        "slots": {"n_treated": {"from": "a"}},
+        "prose": "Nineteen participants reported adverse events, and the overall tolerability profile was encouraging."
+      }
+    },
+    {
+      "label": "unit_swap",
+      "expected": "miss",
+      "note": "GAP: '19%' uses a participant COUNT (n_any_ae=19) as a percentage. The magnitude 19 grounds and is ledgered; both layers are unit-blind.",
+      "template": "In the safety population (N={n_treated}), events were recorded.",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "get_fact", "args": {"name": "n_any_ae"}}
+        ],
+        "slots": {"n_treated": {"from": "a"}},
+        "prose": "Adverse events occurred in 19% of participants."
+      }
+    },
+    {
+      "label": "whitespace_evaded_banned_claim",
+      "expected": "miss",
+      "note": "GAP: 'well  tolerated' (two spaces) does not match the single-space denylist entry. The denylist is finite literal substrings.",
+      "template": "In the safety population (N={n_treated}), {n_any_ae} participants had events.",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "get_fact", "args": {"name": "n_any_ae"}}
+        ],
+        "slots": {"n_treated": {"from": "a"}, "n_any_ae": {"from": "b"}},
+        "prose": "The drug was well  tolerated."
+      }
+    },
+    {
+      "label": "correct_number_wrong_sentence",
+      "expected": "miss",
+      "note": "GAP: the tool-sourced headache count (6) is placed in a serious-adverse-event sentence. No layer checks semantic placement. The subtlest miss.",
+      "template": "In the safety population (N={n_treated}), safety was reviewed.",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "get_fact", "args": {"name": "n_headache"}}
+        ],
+        "slots": {"n_treated": {"from": "a"}},
+        "prose": "A total of 6 participants experienced a serious adverse event."
+      }
+    }
+  ]
+}

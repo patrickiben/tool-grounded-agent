@@ -1,0 +1,28 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Self-test (zero dependencies)
+        run: python selftest.py
+      - name: CLI + exports (JSON / JUnit)
+        run: python -m toolagent scenarios/ae_overview.json --json results.json --junit results.xml
+      - name: Unit tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pytest -q
+      - name: Zero-dependency import check
+        run: python -c "import toolagent; print(toolagent.__version__)"

@@ -1,0 +1,118 @@
+{
+  "name": "Adverse-event overview (synthetic CP-101)",
+  "abs_tol": 0.05,
+  "rel_tol": 0.001,
+  "facts": [
+    {"name": "n_treated",   "value": 24,   "unit": "participants"},
+    {"name": "n_any_ae",    "value": 19,   "unit": "participants"},
+    {"name": "pct_any_ae",  "value": 79.2, "unit": "%"},
+    {"name": "n_related",   "value": 10,   "unit": "participants"},
+    {"name": "pct_related", "value": 41.7, "unit": "%"},
+    {"name": "n_severe",    "value": 0,    "unit": "participants"},
+    {"name": "n_sae",       "value": 0,    "unit": "participants"},
+    {"name": "n_headache",  "value": 6,    "unit": "participants"},
+    {"name": "pct_headache","value": 25.0, "unit": "%"}
+  ],
+  "banned_phrases": ["well tolerated", "well-tolerated", "no safety concerns", "safe and effective", "favorable safety"],
+  "required_names": ["n_treated", "pct_any_ae"],
+  "candidates": [
+    {
+      "label": "well_behaved",
+      "expected": "pass",
+      "template": "In the safety population (N={n_treated}), {n_any_ae} participants ({pct_any_ae}%) experienced at least one treatment-emergent adverse event. Treatment-related events occurred in {n_related} participants ({pct_related}%). The most frequently reported preferred term was headache, in {n_headache} participants ({pct_headache}%).",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "get_fact", "args": {"name": "n_any_ae"}},
+          {"id": "c", "tool": "compute_rate", "args": {"numerator_name": "n_any_ae", "denominator_name": "n_treated"}},
+          {"id": "d", "tool": "get_fact", "args": {"name": "n_related"}},
+          {"id": "e", "tool": "compute_rate", "args": {"numerator_name": "n_related", "denominator_name": "n_treated"}},
+          {"id": "f", "tool": "get_fact", "args": {"name": "n_headache"}},
+          {"id": "g", "tool": "compute_rate", "args": {"numerator_name": "n_headache", "denominator_name": "n_treated"}}
+        ],
+        "slots": {
+          "n_treated": {"from": "a"}, "n_any_ae": {"from": "b"}, "pct_any_ae": {"from": "c"},
+          "n_related": {"from": "d"}, "pct_related": {"from": "e"},
+          "n_headache": {"from": "f"}, "pct_headache": {"from": "g"}
+        },
+        "prose": ""
+      }
+    },
+    {
+      "label": "rogue_hallucinated_number",
+      "expected": "fail",
+      "note": "Injects 81.5% (no fact, no ledger) into free prose.",
+      "template": "In the safety population (N={n_treated}), adverse events were observed.",
+      "plan": {
+        "tool_calls": [{"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}}],
+        "slots": {"n_treated": {"from": "a"}},
+        "prose": "Notably, 81.5% of participants experienced a serious adverse event."
+      }
+    },
+    {
+      "label": "rogue_unqueried_real_fact",
+      "expected": "fail",
+      "note": "CENTERPIECE: recites a real fact (79.2%) it never queried. Fails numbers_from_ledger ONLY; passes plain numguard (no ledger).",
+      "template": "In the safety population (N={n_treated}), adverse events were assessed.",
+      "plan": {
+        "tool_calls": [{"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}}],
+        "slots": {"n_treated": {"from": "a"}},
+        "prose": "Overall, 79.2% of participants reported a treatment-emergent adverse event."
+      }
+    },
+    {
+      "label": "rogue_fabricated_slot",
+      "expected": "fail",
+      "note": "Binds pct_any_ae to a literal it never fetched -> «UNSOURCED».",
+      "template": "In the safety population (N={n_treated}), {n_any_ae} participants ({pct_any_ae}%) had an event.",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "get_fact", "args": {"name": "n_any_ae"}}
+        ],
+        "slots": {"n_treated": {"from": "a"}, "n_any_ae": {"from": "b"}, "pct_any_ae": {"literal": 88.8}},
+        "prose": ""
+      }
+    },
+    {
+      "label": "rogue_banned_claim",
+      "expected": "fail",
+      "note": "All numbers grounded + ledgered; injects 'well tolerated'. Layer-2 claim check only.",
+      "template": "In the safety population (N={n_treated}), {n_any_ae} participants ({pct_any_ae}%) had an event.",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "get_fact", "args": {"name": "n_any_ae"}},
+          {"id": "c", "tool": "compute_rate", "args": {"numerator_name": "n_any_ae", "denominator_name": "n_treated"}}
+        ],
+        "slots": {"n_treated": {"from": "a"}, "n_any_ae": {"from": "b"}, "pct_any_ae": {"from": "c"}},
+        "prose": "The study drug was well tolerated."
+      }
+    },
+    {
+      "label": "rogue_unknown_fact",
+      "expected": "fail",
+      "note": "Calls get_fact('pct_cure') which does not exist; the unsourced slot is caught.",
+      "template": "In the safety population (N={n_treated}), the cure rate was {pct_cure}%.",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "get_fact", "args": {"name": "pct_cure"}}
+        ],
+        "slots": {"n_treated": {"from": "a"}, "pct_cure": {"from": "b"}},
+        "prose": ""
+      }
+    },
+    {
+      "label": "rogue_kitchen_sink",
+      "expected": "fail",
+      "note": "Ungrounded number + banned claim together; multiple checks across both layers.",
+      "template": "In the safety population (N={n_treated}), events occurred.",
+      "plan": {
+        "tool_calls": [{"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}}],
+        "slots": {"n_treated": {"from": "a"}},
+        "prose": "An additional 81.5% had serious events, and the drug was well tolerated."
+      }
+    }
+  ]
+}

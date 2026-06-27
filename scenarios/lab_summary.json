@@ -1,0 +1,42 @@
+{
+  "name": "Derived numbers & upstream-truth gaps",
+  "abs_tol": 0.05,
+  "rel_tol": 0.001,
+  "facts": [
+    {"name": "n_treated",  "value": 30,   "unit": "participants"},
+    {"name": "n_any_ae",   "value": 19,   "unit": "participants"},
+    {"name": "pct_any_ae", "value": 99.9, "unit": "%"}
+  ],
+  "banned_phrases": ["well tolerated", "no safety concerns", "safe and effective"],
+  "required_names": ["n_treated"],
+  "candidates": [
+    {
+      "label": "garbage_in_fact",
+      "expected": "miss",
+      "note": "The FactStore itself holds a wrong value (pct_any_ae=99.9; 19/30 is really 63.3). The agent faithfully fetches and reports it -> PASSES. Neither layer validates upstream truth. The most credibility-building scenario.",
+      "template": "Among {n_treated} participants, the adverse-event rate was {pct_any_ae}%.",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "get_fact", "args": {"name": "pct_any_ae"}}
+        ],
+        "slots": {"n_treated": {"from": "a"}, "pct_any_ae": {"from": "b"}},
+        "prose": ""
+      }
+    },
+    {
+      "label": "wrong_denominator_disagree",
+      "expected": "fail",
+      "note": "compute_rate over two real facts yields a tool-derived value (63.3) that is NOT an allowed fact: numbers_from_ledger PASSES (it was fetched), numbers_grounded FAILS (not a fact). Provenance != correctness; the layers cover each other's blind spots.",
+      "template": "Among {n_treated} participants, the computed adverse-event rate was {pct_calc}%.",
+      "plan": {
+        "tool_calls": [
+          {"id": "a", "tool": "get_fact", "args": {"name": "n_treated"}},
+          {"id": "b", "tool": "compute_rate", "args": {"numerator_name": "n_any_ae", "denominator_name": "n_treated"}}
+        ],
+        "slots": {"n_treated": {"from": "a"}, "pct_calc": {"from": "b"}},
+        "prose": ""
+      }
+    }
+  ]
+}
