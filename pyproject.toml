@@ -21,7 +21,7 @@ classifiers = [
 dev = ["pytest>=7"]
 
 [project.urls]
-Homepage = "https://github.com/YOUR-GITHUB/tool-grounded-agent"
+Homepage = "https://github.com/patrickiben/tool-grounded-agent"
 
 [tool.setuptools]
 packages = ["toolagent"]

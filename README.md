@@ -1,8 +1,8 @@
 # tool-grounded-agent
 
-**A grounding *harness* for agentic drafting — not a safe agent.** A tool-calling "agent" drafts a clinical adverse-event narrative by filling template slots **only** from a recorded tool-call ledger, and the assembled text is then re-validated by a vendored [`numguard`](https://github.com/YOUR-GITHUB/numguard)-style guard. Provenance and grounding in two independent layers. *Agents WITH guardrails, not vibes.*
+**A grounding *harness* for agentic drafting — not a safe agent.** A tool-calling "agent" drafts a clinical adverse-event narrative by filling template slots **only** from a recorded tool-call ledger, and the assembled text is then re-validated by a vendored [`numguard`](https://github.com/patrickiben/numguard)-style guard. Provenance and grounding in two independent layers. *Agents WITH guardrails, not vibes.*
 
-![ci](https://github.com/YOUR-GITHUB/tool-grounded-agent/actions/workflows/ci.yml/badge.svg)
+![ci](https://github.com/patrickiben/tool-grounded-agent/actions/workflows/ci.yml/badge.svg)
 &nbsp;·&nbsp; Python ≥ 3.9 · zero runtime dependencies · MIT
 
 > **Read this first.** This is a grounding **harness**, not a safe autonomous agent. The "agent" is a **deterministic, scripted stand-in** for a function-calling LLM — *it is not a language model.* The rogue behaviors below are **author-written injections** chosen to exercise each guard layer, **not** bypasses discovered by an adversarial model. This demonstrates a guard *architecture*; it is **not** an adversarial-robustness evaluation. "Grounded" here means **traceable, not trustworthy.**
@@ -119,4 +119,4 @@ A **working proof-of-concept, not validated software for production regulatory u
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Built by Patrick Iben (`p.iben@saeny.net`). Companion projects: [`numguard`](https://github.com/YOUR-GITHUB/numguard), [`grounded-rag`](https://github.com/YOUR-GITHUB/grounded-rag), [`guarded-llm-service`](https://github.com/YOUR-GITHUB/guarded-llm-service).
+MIT — see [LICENSE](LICENSE). Built by Patrick Iben (`p.iben@saeny.net`). Companion projects: [`numguard`](https://github.com/patrickiben/numguard), [`grounded-rag`](https://github.com/patrickiben/grounded-rag), [`guarded-llm-service`](https://github.com/patrickiben/guarded-llm-service).
