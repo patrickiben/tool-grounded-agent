@@ -15,6 +15,10 @@ def load_scenario(path: str) -> Dict[str, Any]:
         d = json.load(fh)
     facts = [Fact(name=f["name"], value=f.get("value"), unit=f.get("unit", "")) for f in d.get("facts", [])]
     store = FactStore(facts=facts, abs_tol=d.get("abs_tol", 0.05), rel_tol=d.get("rel_tol", 0.001))
+    store.validate(d.get("required_names", []))
+    candidates = d.get("candidates", [])
+    if not isinstance(candidates, list) or not candidates:
+        raise ValueError("At least one candidate is required")
     return {
         "name": d.get("name", ""),
         "store": store,

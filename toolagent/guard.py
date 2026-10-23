@@ -47,7 +47,7 @@ def check_required_facts(text: str, store: FactStore, required_names: Iterable[s
     for name in required_names:
         f = store.by_name(name)
         if f is None or f.value is None:
-            continue
+            raise ValueError(f"Invalid required fact: {name!r}")
         tol = store._tol_for(f.value)
         if not any(abs(n - f.value) <= tol for n in nums):
             unit = f" {f.unit}" if f.unit else ""
@@ -74,6 +74,15 @@ def evaluate(
     required_names: Iterable[str] = (),
     ledger: Optional[ToolLedger] = None,
 ) -> Report:
+    required_names = tuple(required_names)
+    store.validate(required_names)
+    try:
+        return _evaluate(text, store, banned_phrases, required_names, ledger)
+    except ValueError as error:
+        return Report([Finding("numeric_format", "ERROR", str(error), "layer2")])
+
+
+def _evaluate(text, store, banned_phrases, required_names, ledger):
     findings: List[Finding] = []
     findings += check_numbers_grounded(text, store)
     findings += check_no_unsupported_claims(text, banned_phrases)

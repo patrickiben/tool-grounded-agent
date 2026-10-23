@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
+from ._numeric import validate_fact_config, validate_tolerances
+
 
 @dataclass(frozen=True)
 class Fact:
@@ -19,6 +21,14 @@ class FactStore:
     context_values: Tuple[float, ...] = ()
     abs_tol: float = 0.05
     rel_tol: float = 0.001
+
+    def __post_init__(self) -> None:
+        self.validate()
+
+    def validate(self, required_names=()) -> None:
+        validate_tolerances(self.abs_tol, self.rel_tol)
+        validate_fact_config(((f.name, f.value) for f in self.facts), required_names,
+                             self.context_values)
 
     def numeric_values(self) -> List[float]:
         vals = [f.value for f in self.facts if f.value is not None]

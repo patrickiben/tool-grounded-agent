@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from ._numeric import finite_number
 from .facts import FactStore
 
 
@@ -67,6 +68,7 @@ class ToolLedger:
 
 class ToolRegistry:
     def __init__(self, store: FactStore) -> None:
+        store.validate()
         self.store = store
         self.ledger = ToolLedger()
 
@@ -92,8 +94,13 @@ class ToolRegistry:
         if n is None or d is None or n.value is None or d.value in (None, 0):
             res = ToolResult(value=None, rendered="", ok=False, error="invalid rate inputs", provenance=prov)
         else:
-            val = round(100.0 * n.value / d.value, ndigits)
-            res = ToolResult(value=val, rendered=f"{val:.{ndigits}f}", unit="%", ok=True, provenance=prov)
+            val = round(100.0 * (n.value / d.value), ndigits)
+            try:
+                finite_number(val, "Computed rate")
+            except ValueError as error:
+                res = ToolResult(ok=False, error=str(error), provenance=prov)
+            else:
+                res = ToolResult(value=val, rendered=f"{val:.{ndigits}f}", unit="%", ok=True, provenance=prov)
         self.ledger.record(ToolCall(
             "compute_rate",
             {"numerator_name": numerator_name, "denominator_name": denominator_name},

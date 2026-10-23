@@ -41,3 +41,18 @@ def test_ledger_sourced_values_excludes_failed_calls():
     reg.get_fact("n")
     reg.get_fact("missing")
     assert reg.ledger.sourced_values() == [24]
+
+
+def test_computed_rate_cannot_add_infinity_to_the_ledger():
+    store = FactStore([Fact("n", 1e308), Fact("d", 1e-308)])
+    registry = ToolRegistry(store)
+    result = registry.compute_rate("n", "d")
+    assert not result.ok
+    assert result.value is None
+    assert registry.ledger.sourced_values() == []
+
+
+def test_rate_avoids_overflow_when_the_ratio_is_finite():
+    registry = ToolRegistry(FactStore([Fact("n", 1e308), Fact("d", 1e308)]))
+    result = registry.compute_rate("n", "d")
+    assert result.ok and result.value == 100

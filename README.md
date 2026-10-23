@@ -13,13 +13,13 @@
 
 ```
 facts ─► tools ─► ledger ─► slot-fill render ─► [Layer 1] ─► numguard guard + ledger check ─► [Layer 2] ─► human signs
-        (the only      (audit     (a slot can only        (every number must be an allowed
+        (the only      (audit     (a slot can only        (recognized values must be allowed
          number         trail)     hold a tool result)      fact AND actually fetched this run)
          source)
 ```
 
-- **Layer 1 — structural (prevention).** A `{slot}` can only be filled by a successful tool result; the agent has no API to type a bare number. A slot with no backing result renders as `«UNSOURCED»` and raises an error — the breach is *visible in the draft*, not hidden.
-- **Layer 2 — text guard (detection / backstop).** Run on the final text regardless of how the planner behaved: `numbers_grounded` (every number is an allowed fact), `numbers_from_ledger` (every number was *actually produced by a tool this run* — strictly stronger), `unsupported_claims` (banned phrases), `required_facts`.
+- **Layer 1 — structural (prevention).** A `{slot}` can only be filled by a successful tool result. Free prose can still contain bare numbers, so Layer 2 checks the assembled text. A slot with no backing result renders as `«UNSOURCED»` and raises an error — the breach is *visible in the draft*, not hidden.
+- **Layer 2 — text guard (detection / backstop).** Run on the final text regardless of how the planner behaved: `numbers_grounded` (each recognized value is an allowed fact), `numbers_from_ledger` (each recognized value was *produced by a tool this run* — strictly stronger), `unsupported_claims` (banned phrases), `required_facts`.
 
 ### The centerpiece: the two layers are not redundant
 
@@ -71,7 +71,7 @@ python -m toolagent scenarios/ae_overview.json --json results.json --junit resul
 The harness ships its own blind spots as **executable `known-gap` tests** (`tests/test_known_gaps.py`) — they assert the problem *passes*, so if behavior ever silently changes, the tests break and this list must be updated honestly.
 
 - **Garbage-in facts.** If the `FactStore` holds a wrong value, every layer certifies the wrong number. No layer validates upstream truth.
-- **Spelled-out / non-ASCII numbers.** "nineteen", Roman numerals, full-width digits, `grade3`, leading-decimal `.5`, signed `-2.3`, ranges `1-4`, European `79,2` — the extractor doesn't see them, and it backs *both* layers.
+- **Numbers outside the declared grammar.** Spelled-out "nineteen", Roman numerals and letter-led identifiers such as `grade3` remain invisible to both layers. Signed/leading-decimal/scientific values and full-width decimal digits now parse correctly; joined ranges and malformed grouping fail. See [the numeric contract](NUMERIC_CONTRACT.md).
 - **Qualitative claims beyond a finite denylist.** Paraphrase ("encouraging tolerability profile"), whitespace evasion ("well  tolerated"), implied causality, unsupported comparison, framing/quantifier spin ("only 79.2%"). The entire class of qualitative harm is essentially unguarded.
 - **Unit blindness.** "19% of participants" where 19 is a *count* passes both layers.
 - **Selective omission.** A draft that truthfully reports the AE rate while silently dropping serious events passes; `required_facts` checks presence, not completeness or balance.
@@ -86,7 +86,7 @@ The harness ships its own blind spots as **executable `known-gap` tests** (`test
 
 | | catches | blind to |
 |---|---|---|
-| **Layer 1** (render) | numbers typed outside a tool-backed slot; fabricated/empty slots | claim semantics; anything in free prose |
+| **Layer 1** (render) | fabricated/empty slots (free prose is checked in Layer 2) | claim semantics; anything in free prose |
 | **Layer 2** (guard) | ungrounded numbers; numbers never fetched; banned phrases; missing required facts | spelled-out/unit-swapped numbers; paraphrased claims; upstream truth; placement |
 
 Neither is sufficient; together they cover more — and the `wrong_denominator_disagree` scenario shows them *disagreeing* (a tool-derived value passes the ledger check but fails grounding), which is exactly the point.
@@ -105,11 +105,11 @@ The planner is a `Planner` Protocol; `MockPlanner`/`ReplayPlanner` are scripted 
 toolagent/   facts · extract · tools (registry+ledger) · render (Layer 1) · guard (Layer 2)
              planner (seam) · agent (run_agent) · report · loader · export · __main__ (CLI)
 scenarios/   ae_overview.json · lab_summary.json · misleading_but_grounded.json
-tests/       7 modules, 34 tests (agent, tools, render, guard, known_gaps, export, selftest)
+tests/       agent, tools, render, guard, known gaps, exports, numeric contract, validation
 selftest.py  zero-dependency runnable proof
 ```
 
-`pytest -q` → **34 passed**. CI runs the self-test, the CLI export, the suite (Python 3.9 + 3.12), and a clean-env import check.
+`python -m pytest -q` runs the full suite. CI checks Python 3.9, 3.12 and 3.14, including self-test, CLI exports and an isolated installed-wheel import. Unknown/nonnumeric required facts, duplicate names and non-finite/negative tolerance settings raise `ValueError`; malformed draft numeric tokens fail the report.
 
 ---
 
